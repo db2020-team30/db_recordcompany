@@ -1,6 +1,6 @@
 # db_recordcompany
 
--Πατήστε Code->Download Zip
+-Πατήστε Code->Download Zip\n
 -Αποσυμπιέστε το περιεχόμενο
 
 1) Εγκαταστήστε την python:
