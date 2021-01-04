@@ -7,11 +7,12 @@ import scrollbar
 from PIL import ImageTk,Image
 import helping_func
 
-def select_pleiad(a,conn,table):
-    if(a!=5):  #στην διαγραφή και στην ενημέρωση,η επιλογή γίνεται βάση του primery key
-        pr=helping_func.get_prime(table,conn)
-    else:  #στην εκτύπωση πλειάδας,η επιλογή γίνεται βάση οποιουδήποτε γνωρίσματος
-        pr=[]
+def select_row_window(a,conn,table):  # παράθυρο για επιλογή γνωρισμάτων πλειάδας (για διαγραφή, ενημέρωση ή εκτύπωση πλειάδας)
+    
+    if(a!=5):  #στην διαγραφή και στην ενημέρωση,η επιλογή γίνεται βάσει του primary key
+        fields=helping_func.get_primary(table,conn)
+    else:  #στην εκτύπωση πλειάδας,η επιλογή γίνεται βάσει οποιουδήποτε γνωρίσματος
+        fields=[]
         cur=conn.cursor()
         cur.execute(f'''
         SELECT COLUMN_NAME
@@ -20,13 +21,13 @@ def select_pleiad(a,conn,table):
         AND `TABLE_NAME`="{table}"''')
         c=cur.fetchall()
         for i in range(len(c)):
-            pr.append(str(c[i][0]))
+            fields.append(str(c[i][0]))
         cur.close()
 
     #δημιουργία παραθύρου
     window=scrollbar.create('500x400','Επιλογή πλειάδας')
 
-    #Εαν γίνεται ενημέρωση, γίνεται έλεγχος για το αν υπάρχουν στοιχεία που δεν ειναι PRIMARY KEY. Αν δεν υπάρχουν,η ενημέρωση ακυρώνεται
+    #Εαν γίνεται ενημέρωση, γίνεται έλεγχος για το αν υπάρχουν στοιχεία που δεν ειναι PRIMARY KEY. Αν δεν υπάρχουν, η ενημέρωση ακυρώνεται
     col=[]
     if(a==3):
         cur=conn.cursor()
@@ -49,51 +50,51 @@ def select_pleiad(a,conn,table):
     #Για καθε στήλη που ειναι primary key, δημιουργείται Combobox με επιλογές τα αποθηκευμένα στοιχεία της στήλης.
     #Για την επιλογή "Εκτύπωση πλειάδας" γίνεται για όλες τις στήλες
     i=1
-    comb_arr=[]
-    for k in pr:
+    combobox_array=[]
+    for k in fields:
         #εμφάνιση ονόματος στήλης
         Label(window,bg='white', text=f'{helping_func.greek(k)}:', fg="blue", font=('arial','13')).grid(column=0,row=i,sticky=W,padx=10)
         cur=conn.cursor()
         cur.execute(f'''SELECT DISTINCT {k}
                         FROM {table}''')
-        op_tuple=cur.fetchone()
+        option_tuple=cur.fetchone()
         op=[]
 
-        #αν είναι η επιλογή "εκτύπωση πλειάδας", βαζουμε και την επιλογή '-', ώστε να επιλέγει αυτό ο χρήστης, αμα δεν θέλει να αναζητήσει πλειάδα βάση αυτού του γνωρίσματος       
+        #αν είναι η επιλογή "εκτύπωση πλειάδας", βαζουμε και την επιλογή '-', ώστε να επιλέγει αυτό ο χρήστης, αμα δεν θέλει να αναζητήσει πλειάδα βάσει αυτού του γνωρίσματος       
         if(a==5):
             op.append('-')
-        elif(op_tuple is None): #αλλιώς αν δεν ύπαρχουν δεδομένα(σε στήλη που ειναι PRIMARY KEY),εμφανίζεται μήνυμα λάθους
+        elif(option_tuple is None): #αλλιώς αν δεν υπάρχουν δεδομένα(σε στήλη που ειναι PRIMARY KEY),εμφανίζεται μήνυμα λάθους
             helping_func.error("Δεν υπάρχουν πλειάδες")
             return
 
         #δημιουργία επιλογών του Combobox
-        while op_tuple is not None:
-            op.append(str(op_tuple[0]))
-            op_tuple=cur.fetchone()
+        while option_tuple is not None:
+            op.append(str(option_tuple[0]))
+            option_tuple=cur.fetchone()
 
         #δημιουργία Combobox
         combo=ttk.Combobox(window,values=op,font=('arial','13'),width=25)
         combo.grid(column=1,row=i,columnspan=2)
         combo.current(0)
-        comb_arr.append(combo)
+        combobox_array.append(combo)
         i=i+1
         cur.close()
 
     #δημιουργία κουμπίων
     if a==5:
-        Button(window,bg='white',text="Επιλογή",font=('arial','12'),command=lambda: show_entry(table,conn,comb_arr,pr,window)).grid(column=1,row=i,sticky=S)
+        Button(window,bg='white',text="Επιλογή",font=('arial','12'),command=lambda: show_row(table,conn,combobox_array,fields,window)).grid(column=1,row=i,sticky=S)
     elif a==2:
-        Button(window,bg='white',text="Επιλογή",font=('arial','12'),command=lambda: delete_row(table,conn,comb_arr,window)).grid(column=1,row=i,sticky=S)
+        Button(window,bg='white',text="Επιλογή",font=('arial','12'),command=lambda: delete_row(table,conn,combobox_array,window)).grid(column=1,row=i,sticky=S)
     else:
-        Button(window,bg='white',text="Επιλογή",font=('arial','12'),command=lambda: select_columns(table,conn,comb_arr,window,col)).grid(column=1,row=i,sticky=S)
+        Button(window,bg='white',text="Επιλογή",font=('arial','12'),command=lambda: columns_to_update(table,conn,combobox_array,window,col)).grid(column=1,row=i,sticky=S)
     window.mainloop()
     return
 
-def select_columns(table,conn,comb_arr,window,col):#επιλογή στηλών προς ενημέρωση
+def columns_to_update(table,conn,combobox_array,window,col): #επιλογή στηλών προς ενημέρωση
     entry=[]
 
     #αποθήκευση επιλεγμένης πλειάδας
-    for i in comb_arr:
+    for i in combobox_array:
         entry.append(i.get())
     window.destroy() #καταστροφή παραθύρου επιλογής πλειάδας
     cur=conn.cursor()
@@ -102,7 +103,7 @@ def select_columns(table,conn,comb_arr,window,col):#επιλογή στηλών 
     check=scrollbar.create('340x350','Επιλογή στοιχείων για ενημέρωση')
     Label(check,bg='white', text='Επιλέξτε ποιές τιμές θέλετε να ενημερώσετε', fg="blue", font=('arial','13')).pack()
 
-    #δημιουργία των "Checkbutton", ενα για κάθε στήλη που δεν είναι PRIMARY KEY 
+    #δημιουργία των "Checkbutton", ένα για κάθε στήλη που δεν είναι PRIMARY KEY 
     ch_arr=[]
     for i in col:
         ch=IntVar()
@@ -114,14 +115,14 @@ def select_columns(table,conn,comb_arr,window,col):#επιλογή στηλών 
     Button(check,bg='white',text="Επιλογή",font=('arial','12'),command=lambda: new_data(3,conn,table,entry,col,check,ch_arr)).pack()
     return
 
-def updating(table,prime,entry,column,data,conn):
+def updating(table,primary,entry,column,data,conn):
     cur=conn.cursor()
     if(data!='NULL'): data="'" +str(data)+"'" #τροποποιουμε το data στην σωστη μορφη
 
     #δημιουργια εντολής sql
-    sql="UPDATE `{}` set `{}`={} where {}={}".format(table,column,data,prime[0],entry[0])
-    for i in range(1,len(prime)):
-        sql=sql+(' and {}={}'.format(prime[i],entry[i]))
+    sql="UPDATE `{}` set `{}`={} where {}={}".format(table,column,data,primary[0],entry[0])
+    for i in range(1,len(primary)):
+        sql=sql+(' and {}={}'.format(primary[i],entry[i]))
     sql=sql+(';')
 
     #εκτέλεση εντολής sql και διαχείριση λαθών
@@ -135,7 +136,7 @@ def updating(table,prime,entry,column,data,conn):
     return 
 
     
-def update_exe(conn,table,entry,entries,columns,new_val): #αποθήκευση επιλογής γνωρισμάτων προς αλλαγή και κλίση της "updating"
+def update_exe(conn,table,entry,entries,columns,new_val): #αποθήκευση επιλογής γνωρισμάτων προς αλλαγή και κλήση της "updating"
     helping_func.error_col=[]
 
     #επανάληψη για όσα γνωρίσματα θέλει να αλλάξει ο χρήστης
@@ -145,19 +146,19 @@ def update_exe(conn,table,entry,entries,columns,new_val): #αποθήκευση 
         if(len(entries[i])==1):
             temp1=entries[i][0].get()
             if(temp1==''):temp='NULL' #μετατροπή κενού σε NULL
-            a=updating(table,helping_func.get_prime(table,conn),entry,columns[i],temp1,conn) #εκτέλεση ενημέρωσης
+            a=updating(table,helping_func.get_primary(table,conn),entry,columns[i],temp1,conn) #εκτέλεση ενημέρωσης
         else: #για γνωρισματα τυπου date,time
             temp=[]
             for c in range(3):
                 temp.append(entries[i][c].get())
             if('date' not in columns[i]):
-                a=updating(table,helping_func.get_prime(table,conn),entry,columns[i],temp[0]+':'+temp[1]+':'+temp[2],conn) #εκτέλεση ενημέρωσης
+                a=updating(table,helping_func.get_primary(table,conn),entry,columns[i],temp[0]+':'+temp[1]+':'+temp[2],conn) #εκτέλεση ενημέρωσης
             else:
 
                 #έλεγχος για το αν η ημερομηνία είναι σωστή
                 try :
                     datetime(int(temp[0]),int(temp[1]),int(temp[2]))
-                    a=updating(table,helping_func.get_prime(table,conn),entry,columns[i],temp[0]+'-'+temp[1]+'-'+temp[2],conn) #εκτέλεση ενημέρωσης
+                    a=updating(table,helping_func.get_primary(table,conn),entry,columns[i],temp[0]+'-'+temp[1]+'-'+temp[2],conn) #εκτέλεση ενημέρωσης
                 except ValueError :
                     helping_func.error("Λανθασμένη\nημερομηνία!")
                     return
@@ -180,7 +181,7 @@ def update_exe(conn,table,entry,entries,columns,new_val): #αποθήκευση 
     new_val.destroy()
     return
 
-def new_data(option,conn,table,entry,columns,check='',ch_arr=''): #επιλογή καινούργιων δεδομένων
+def new_data(option,conn,table,entry,columns,check='',ch_arr=''): #επιλογή καινούριων δεδομένων
     
     #για ενημέρωση
     if(option==3):
@@ -197,7 +198,7 @@ def new_data(option,conn,table,entry,columns,check='',ch_arr=''): #επιλογ�
         if(len(columns)==0):
             helping_func.error('Δεν επιλέξατε στοιχεία προς τροποποίηση!')
             return
-        else:#αλλιώς καταστροφή προηγούμενου παραθύρου
+        else:   #αλλιώς, καταστροφή προηγούμενου παραθύρου
             check.destroy()
 
     #για εισαγωγή
@@ -240,7 +241,7 @@ def new_data(option,conn,table,entry,columns,check='',ch_arr=''): #επιλογ�
         fk_tuple=cur.fetchone()
     cur.close()
 
-    #δημιουργία, για κάθε στοιχείο της λίστας "columns" ,ανάλογο κουτί εισαγωγής
+    #δημιουργία του ανάλογου κουτιού εισαγωγής για κάθε στοιχείο της λίστας "columns"
     for i in range(len(columns)):
         Label(new_val,bg='white', text=f'{helping_func.greek(columns[i])}:', font=('arial','13')).grid(column=0,row=i,columnspan=2)
         if(columns[i] in fk_col_arr): # Για τις στήλες που είναι foreign key
@@ -251,19 +252,19 @@ def new_data(option,conn,table,entry,columns,check='',ch_arr=''): #επιλογ�
                     index=c
             cur.execute(f'''SELECT DISTINCT {fk_arr[index][1]}
                         FROM {fk_arr[index][0]}''')
-            op_tuple=cur.fetchone()
+            option_tuple=cur.fetchone()
             if(option==1):
                 op=['-']
             else:
                 op=[]
-            if(op_tuple is None and option==3): #αν δεν ύπαρχουν δεδομένα(στην στήλη που δείχνει το foreign key),εμφανίζεται μήνυμα λάθους
+            if(option_tuple is None and option==3): #αν δεν ύπαρχουν δεδομένα (στην στήλη που δείχνει το foreign key),εμφανίζεται μήνυμα λάθους
                 helping_func.error("Δεν υπάρχουν δεδομένα\nγια να αντιστοιχίσετε\nτο foreign key!")
                 return
 
             #δημιουργία επιλογών του Combobox
-            while op_tuple is not None:
-                op.append(str(op_tuple[0]))
-                op_tuple=cur.fetchone()
+            while option_tuple is not None:
+                op.append(str(option_tuple[0]))
+                option_tuple=cur.fetchone()
 
             #δημιουργία Combobox
             combo=[]
@@ -272,12 +273,16 @@ def new_data(option,conn,table,entry,columns,check='',ch_arr=''): #επιλογ�
             combo[0].current(0)
             entries.append(combo)
             cur.close()
+
         elif(columns[i]=='order_date'): #για δεδομένα datetime
             entries.append(helping_func.datetime_data(i,new_val))
+
         elif('date' in columns[i]):#για δεδομένα date
             entries.append(helping_func.date_data(i,new_val))
+
         elif(columns[i]=='diarkeia'):#για δεδομένα time
             entries.append(helping_func.time_data(i,new_val))
+
         else:#για όλα τα άλλα δεδομένα
             temp1=[]
             temp1.append(Entry(new_val,font=('times new roman','12'), bg='white', relief='sunken', bd=2))
@@ -298,19 +303,21 @@ def show_table(table,conn): #"Εκτύπωση πίνακα"
     helping_func.printing(table,sql,conn,0) #εκτύπωση(βλ. helping_func.py)
     return
 
-def show_entry(table,conn,comb_arr,columns,window):
+def show_row(table,conn,combobox_array,columns,window):
     entry=[]
 
-    #δημιουργια της λίστας "columns_original" που περιέχει όλες τις στήλες
+    #δημιουργια της λίστας "columns_original", που περιέχει όλες τις στήλες
     columns_original=[]
     for item in columns :columns_original.append(item)
 
-    #αποθήκευση των επιλογών του χρήστη στον πινακα entry, και αφαίρεση απο την λίστα με τις στήλες, όσες τους δωθηκε τιμή "-"
-    for i in range(len(comb_arr)):
-        entry.append(comb_arr[i].get())
+    #αποθήκευση των επιλογών του χρήστη στον πινακα entry. Αφαίρεση απο την λίστα με τις στήλες, όσων τους δόθηκε τιμή "-"
+    for i in range(len(combobox_array)):
+        entry.append(combobox_array[i].get())
         if(entry[i]=='-'):
             columns.remove(columns_original[i])
-
+    if(len(columns)==0):
+        helping_func.error("Δεν επιλέξατε δεδομένα!")
+        return
     #δημιουργία εντολής sql
     for i in range(len(columns)):
         index=0
@@ -366,7 +373,8 @@ def insert_row(table,conn,entries,new_val,columns):
                     helping_func.error("Λανθασμένη\nημερομηνία!")
                     return
 
-    #δημιουργια Sql
+    #Δημιουργια Sql:
+
     if(len(columns)==0): #Αν ο χρήστης δεν συμπλήρωσε καμία τιμή, εμφάνισε μήνυμα λάθους
         new_val.destroy()
         helping_func.error("Δεν βάλατε τιμές!")
@@ -452,10 +460,11 @@ def insert_row(table,conn,entries,new_val,columns):
     #μήνυμα για την επιτυχία της εισαγωγής
     if(flag==0):
         helping_func.success("Η εισαγωγή\nήταν επιτυχής!")
-    else:#μήνυμα για την έλλειψη αποθέματος
+    else: #μήνυμα για την έλλειψη αποθέματος
         helping_func.success("Η εισαγωγή\nήταν επιτυχής!",1)
     cur.close()
     return
+
 
 def delete_btn(conn,alert_window,sql,table,entry): #εκτέλεση διαγραφής και διαχείριση των λαθών
     alert_window.destroy()
@@ -470,28 +479,32 @@ def delete_btn(conn,alert_window,sql,table,entry): #εκτέλεση διαγρ�
     cur.close()
     return        
 
-def delete_row(table,conn,comb_arr,window): #Διαγραφή
-    entry=[]
+
+def delete_row(table, conn, combobox_array, window): ##ΔΙΑΓΡΑΦΗ ΠΛΕΙΑΔΑΣ
+    
+    entry=[] 
 
     #Αποθήκευση της επιλογής πλειάδας 
-    for i in comb_arr:
+    for i in combobox_array:
         entry.append(i.get())
-    prime=helping_func.get_prime(table,conn)
+        
+    primary=helping_func.get_primary(table,conn) #Εύρεση του/των γνωρισμάτος/των που αποτελούν το πρωτεύον κλειδί
+
     cur=conn.cursor()
-    sql2='''SELECT * FROM {} WHERE {}="{}"'''.format(table,prime[0],entry[0]) 
-    sql1='''DELETE FROM {} WHERE {}="{}"'''.format(table,prime[0],entry[0])
-    for i in range(1,len(prime)):
-        sql1=sql1+' AND {}="{}"'.format(prime[i],entry[i])
-        sql2=sql2+' AND {}="{}"'.format(prime[i],entry[i])
+    sql2='''SELECT * FROM {} WHERE {}="{}"'''.format(table,primary[0],entry[0]) 
+    sql1='''DELETE FROM {} WHERE {}="{}"'''.format(table,primary[0],entry[0])
+    for i in range(1,len(primary)):
+        sql1=sql1+' AND {}="{}"'.format(primary[i],entry[i])
+        sql2=sql2+' AND {}="{}"'.format(primary[i],entry[i])
     sql1=sql1+';'
     sql2=sql2+';'
 
-    #ελέγχουμε αν δεν υπάρχει η πλειάδα που μας δώθηκε
+    #ελέγχουμε μήπως δεν υπάρχει η πλειάδα που μας δόθηκε
     cur.execute(sql2)
     if(cur.fetchall() is None):
         helping_func.error("Δεν βρέθηκε!")
-    else:
 
+    else:
         #Καταστροφή του προηγούμενου παραθύρου και δημιουργία του παραθύρου προειδοποίησης
         cur.close()
         window.destroy()

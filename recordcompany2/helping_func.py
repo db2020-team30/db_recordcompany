@@ -73,18 +73,18 @@ def greek(word): #Μετάφραση σε ελληνικά
     'rec_end':'Ημ.ολοκλ.ηχ.'}
     return translation[word]
 
-def get_prime(table,conn): #βρίσκει τα PRIMARY KEY ενός πίνακα
+def get_primary(table,conn): #βρίσκει τα PRIMARY KEY ενός πίνακα
     cur=conn.cursor()
     cur.execute('''SELECT COLUMN_NAME
                     FROM `INFORMATION_SCHEMA`.`COLUMNS` 
                     WHERE `TABLE_SCHEMA`='recordcompany2' 
                     AND `TABLE_NAME`=%s AND `COLUMN_KEY`="PRI"''',table)
-    prime_tuple=cur.fetchall()
-    prime=[]
-    for i in range(len(prime_tuple)):
-        prime.append(prime_tuple[i][0])
+    primary_tuple=cur.fetchall()
+    primary=[]
+    for i in range(len(primary_tuple)):
+        primary.append(primary_tuple[i][0])
     cur.close()
-    return prime
+    return primary
 
 def generate(a,b): #δημιουργια λίστας με νούμερα σε μορφη string απο το a μέχρι το b
     r=[]
@@ -96,7 +96,7 @@ def generate(a,b): #δημιουργια λίστας με νούμερα σε �
         r.append(value)
     return r
 
-def timing(fr,grid_col,a,st,init): # δημιουργια combobox για δεδομένα τυπου date,datetime,time.
+def timing_combobox(fr,grid_col,a,st,init): # δημιουργια combobox για δεδομένα τυπου date,datetime,time.
                                    #(frame,grid_column,list of options,seperator of comboboxes,initial value of combobox)
     comb_arr=[]
     for c in range(3):
@@ -132,7 +132,7 @@ def time_data(i,new_val) :#δημιουργια δεδομένων για combob
     init.append(0)
     init.append(0)
     init.append(0)
-    return timing(fr,0,a,':',init)
+    return timing_combobox(fr,0,a,':',init)
 
 def date_data(i,new_val):#δημιουργια δεδομένων για combobox για δεδομένα date
     
@@ -140,7 +140,7 @@ def date_data(i,new_val):#δημιουργια δεδομένων για combobo
     fr=Frame(new_val)
     fr.grid(column=2,row=i,columnspan=2,rowspan=1,sticky=W)
     
-    # δημιουργια πίνακα a(πιθανές επιλογές του combobox) και πίνακα init(αρχική τιμή combobox)
+    # δημιουργια πίνακα a (πιθανές επιλογές του combobox) και πίνακα init(αρχική τιμή combobox)
     a=[]
     init=[]
     a.append(generate(1970,2100))
@@ -149,7 +149,7 @@ def date_data(i,new_val):#δημιουργια δεδομένων για combobo
     init.append(50)
     init.append(0)
     init.append(0)
-    return timing(fr,0,a,'-',init)
+    return timing_combobox(fr,0,a,'-',init)
 
 def datetime_data(i,new_val):#δημιουργια δεδομένων για combobox για δεδομένα datetime
     now=datetime.now()
@@ -170,7 +170,7 @@ def datetime_data(i,new_val):#δημιουργια δεδομένων για com
     init.append(int(now.strftime("%Y"))-1970)
     init.append(int(now.strftime("%m"))-1)
     init.append(int(now.strftime("%d"))-1)
-    r_date.append(timing(fr,0,a,'-',init))
+    r_date.append(timing_combobox(fr,0,a,'-',init))
     # δημιουργια πίνακα a(πιθανές επιλογές του combobox) και πίνακα init(αρχική τιμή combobox), για τα δεδομενα time
     Label(fr,bg='white', text=' ', fg="blue", font=('Lucida Console','13')).grid(column=7,row=0,sticky=W)
     a=[]
@@ -181,7 +181,7 @@ def datetime_data(i,new_val):#δημιουργια δεδομένων για com
     init.append(int(now.strftime("%H")))
     init.append(int(now.strftime("%M")))
     init.append(int(now.strftime("%S")))
-    r_time.append(timing(fr,8,a,':',init))
+    r_time.append(timing_combobox(fr,8,a,':',init))
 
     #Συγχώνευση αποτελεσμάτων σε μία λίστα
     for i in range(6):
@@ -193,7 +193,7 @@ def datetime_data(i,new_val):#δημιουργια δεδομένων για com
 
 def printing(table,sql,conn,window):#εκτύπωση δεδομένων
 
-    #παίρνουμε τα ονόματα των στηλών και το ενδεχόμενο μέγιστο μέγεθος χαρακτήρων
+    #παίρνουμε τα ονόματα των στηλών και το μέγιστο μέγεθος χαρακτήρων (αν υπάρχει)
     cur=conn.cursor()
     cur.execute('''SELECT COLUMN_NAME,CHARACTER_MAXIMUM_LENGTH
                        FROM `INFORMATION_SCHEMA`.`COLUMNS` 
@@ -217,6 +217,7 @@ def printing(table,sql,conn,window):#εκτύπωση δεδομένων
             info_arr.append(temp)
         else:
             info_arr.append(len(greek(info[i][0])))
+
     #εκτέλεση sql και διαχείριση των λαθών
     cur.execute(sql)
     row=cur.fetchone()
@@ -251,6 +252,7 @@ def printing(table,sql,conn,window):#εκτύπωση δεδομένων
                         data = row[i].strftime("%H:%M:%S")
                     else:
                         data = row[i].strftime("%Y-%m-%d")
+                        
                 #εκτύπωση στοιχείων γραμμής
                 Label(fr,bg=color,font=('Lucida Console','10'),text=f'{data:<{info_arr[i]}} ',width=info_arr[i]+1,anchor=W).grid(column=i,row=c,sticky=W)
             c=c+1

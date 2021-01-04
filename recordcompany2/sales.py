@@ -6,17 +6,17 @@ from tkinter import ttk
 
 import scrollbar
 
-def physical_sales(conn): #δημιουργία παραθύρου, για την επιλογή μεταξύ CD και VINYL
+def cd_or_vinyl(conn): #δημιουργία παραθύρου, για την επιλογή μεταξύ CD και VINYL
     window=scrollbar.create('350x250','Επιλογή Είδους')
     Label(window, text="Επιλέξτε είδος", fg="blue", bg='white', font=('arial','13')).pack()
     combo=ttk.Combobox(window,values=['CD', 'VINYL'],font=('arial','13'))
     combo.pack()
     combo.current(0)
-    Button(window,text="Επιλογή",bg='white', font=('arial','12'),command=lambda: physical_sales_print(conn,window,combo.get())).pack()
+    Button(window,text="Επιλογή",bg='white', font=('arial','12'),command=lambda: physical_sales(conn,window,combo.get())).pack()
     window.mainloop()
 
 
-def physical_sales_print(conn,window,eid): #"Φυσικές πωλήσεις"
+def physical_sales(conn,window,eid): #"Φυσικές πωλήσεις"
 
     #καταστροφή του παραθύρου επιλογής και δημιουργία καινούργιου
     window.destroy()
@@ -62,7 +62,7 @@ def profit_per_album(conn): #"Έσοδα ανά άλμπουμ"
     fr,root=scrollbar.scroll_window(size)
     root.title('Έσοδα ανά άλμπουμ')
 
-    #εκτέλεση ερωτήματος sql, για την εύρεση των συνολικών εσόδων, απο τις πωλήσεις κάθε αλμπουμ    
+    #εκτέλεση ερωτήματος sql για την εύρεση των συνολικών εσόδων απο τις πωλήσεις κάθε αλμπουμ    
     cur=conn.cursor()
     cur.execute('''
     select album.album_id, titlos, sum(posothta*item_profit) as 'synoliko kerdos'
@@ -77,7 +77,7 @@ def profit_per_album(conn): #"Έσοδα ανά άλμπουμ"
         ans=cur.fetchone()
     cur.close()
 
-    #εκτέλεση ερωτήματος sql για την εύρεση, του συνολικού ποσού που δαπανήθηκε, για την καταχώρηση στα ψηφιακά καταστήματα
+    #εκτέλεση ερωτήματος sql για την εύρεση του συνολικού ποσού που δαπανήθηκε για την καταχώρηση στα ψηφιακά καταστήματα
     cur2=conn.cursor()
     cur2.execute('''
     select album.album_id, titlos, sum(adm_fee)
@@ -88,7 +88,7 @@ def profit_per_album(conn): #"Έσοδα ανά άλμπουμ"
     i=0
     while b is not None:
 
-        #αφαίρεση του κόστους καταχώρησης, από τα συνολικά έσοδα από τις πωλήσεις του άλμπουμ
+        #αφαίρεση του κόστους καταχώρησης από τα συνολικά έσοδα από τις πωλήσεις του άλμπουμ
         if b[2] is not None: a[i][2]=int(a[i][2])-int(b[2])
         b=cur2.fetchone()
         i=i+1
