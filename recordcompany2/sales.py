@@ -27,12 +27,22 @@ def physical_sales(conn,window,eid): #"Φυσικές πωλήσεις"
 
     #εκτέλεση ερωτήματος sql,ανάλογα με την επιλογή του χρήστη που είναι αποθηκευμένη στο "eid"
     cur=conn.cursor()
-    cur.execute('''
-    select album.album_id, titlos, sum(posothta) as 'sales'
-    from album join pwleitai on album.album_id=pwleitai.album_id
-    where eidos=%s
-    group by album.album_id
-    order by sales DESC''',eid)
+    cur.execute(f'''
+                SELECT * FROM(
+                    (select album.album_id, titlos, sum(posothta) as 'sales'
+                    from album join pwleitai on album.album_id=pwleitai.album_id
+                    where eidos="{eid}"
+                    group by album.album_id)
+                
+                UNION
+
+                    (select album.album_id, titlos,0 
+                    from (album left outer join pwleitai on album.album_id=pwleitai.album_id)
+                    where album.album_id NOT IN(SELECT album.album_id FROM album join pwleitai on album.album_id=pwleitai.album_id WHERE eidos="{eid}")
+                    group by album.album_id
+                )) as A
+                ORDER BY sales DESC
+    ''')
     ans=cur.fetchone()
 
     #εκτύπωση των ονομάτων των στηλών
@@ -66,7 +76,7 @@ def profit_per_album(conn): #"Έσοδα ανά άλμπουμ"
     cur=conn.cursor()
     cur.execute('''
     select album.album_id, titlos, sum(posothta*item_profit) as 'synoliko kerdos'
-    from album join pwleitai on album.album_id=pwleitai.album_id
+    from album left outer join pwleitai on album.album_id=pwleitai.album_id
     group by album.album_id''')
     ans=cur.fetchone()
 
@@ -81,7 +91,7 @@ def profit_per_album(conn): #"Έσοδα ανά άλμπουμ"
     cur2=conn.cursor()
     cur2.execute('''
     select album.album_id, titlos, sum(adm_fee)
-    from (album join pwleitai on album.album_id=pwleitai.album_id) left join psif_dianomh on pwleitai.afm=psif_dianomh.afm
+    from (album join pwleitai on album.album_id=pwleitai.album_id) join psif_dianomh on pwleitai.afm=psif_dianomh.afm
     group by album.album_id
     order by album.album_id''')
     b=cur2.fetchone()
@@ -105,6 +115,8 @@ def profit_per_album(conn): #"Έσοδα ανά άλμπουμ"
             color='white'
 
         #εκτύπωση αποτελεσμάτων
+        if(a[i][2] is None):
+            a[i][2]=0
         Label(fr,bg=color,font=('Lucida Console','11'), width=70, anchor=W, text=f'{a[i][0]:<8}  {a[i][1]:<40}  {a[i][2]:<13}').grid(sticky=W, column=0,row=i+2)
     cur2.close()
     root.mainloop()

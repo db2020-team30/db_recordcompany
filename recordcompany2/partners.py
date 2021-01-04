@@ -85,7 +85,7 @@ def pelates(conn): #"Πελάτες και ποσότητες των προϊό�
     cur=conn.cursor()
     cur.execute('''
     SELECT pelaths.afm, pelaths.name, pwleitai.eidos,SUM(pwleitai.posothta)
-    FROM pelaths join pwleitai on pelaths.afm=pwleitai.afm
+    FROM pelaths left outer join pwleitai on pelaths.afm=pwleitai.afm
     GROUP BY pelaths.afm, pwleitai.eidos
     ''')
     ans=cur.fetchone()
@@ -99,12 +99,17 @@ def pelates(conn): #"Πελάτες και ποσότητες των προϊό�
     Label(fr,bg='white',font=('Lucida Console','12'),text=(f'{p1:9} {p2:50} {p3:7} {p4:10}'),fg="red2").grid(column=0,row=i,sticky=W)
     i=1
     while ans is not None:
-
+        if(ans[2] is None):
+            eid='-'
+            pos='0'
+        else:
+            eid=ans[2]
+            pos=ans[3]
         #αλλαγή του χρώματος background και εκτύπωση των δεδομένων
         if i%2:
-            Label(fr,bg='grey96',font=('Lucida Console','12'), text=(f'{ans[0]:9} {ans[1]:50} {ans[2]:7} {ans[3]:^10}')).grid(column=0,row=i,sticky=W)
+            Label(fr,bg='grey96',font=('Lucida Console','12'), text=(f'{ans[0]:9} {ans[1]:50} {eid:7} {pos:<10}')).grid(column=0,row=i,sticky=W)
         else:
-            Label(fr,bg='white',font=('Lucida Console','12'),text=(f'{ans[0]:9} {ans[1]:50} {ans[2]:7} {ans[3]:^10}')).grid(column=0,row=i,sticky=W)
+            Label(fr,bg='white',font=('Lucida Console','12'),text=(f'{ans[0]:9} {ans[1]:50} {eid:7} {pos:<10}')).grid(column=0,row=i,sticky=W)
         ans=cur.fetchone()
         i=i+1
 
@@ -124,7 +129,7 @@ def album_per_studio(conn): #"Άλμπουμ ανά studio ηχογράφηση�
     #εκτέλεση sql
     cur=conn.cursor()
     cur.execute('''SELECT onoma,album_id, titlos, vinyl_stock, CD_stock, release_date, graf_afm,royalties_prof,rec_start,rec_end,hours,hourly_rate
-                   FROM album join studio on studio_afm=studio.afm
+                   FROM album  right outer join studio on studio_afm=studio.afm
                    ORDER BY onoma,album_id''')
     ans=cur.fetchone()
     i=0
@@ -152,7 +157,10 @@ def album_per_studio(conn): #"Άλμπουμ ανά studio ηχογράφηση�
                 date.append('-')
             else:
                 date.append(ans[c].strftime("%Y-%m-%d"))
-        Label(fr,bg=color,font=('Lucida Console','10'),text=f'{str(ans[1]):<11} {str(ans[2]):<50} {str(ans[3]):<14} {str(ans[4]):<11} {date[0]:<12} {str(ans[6]):<12} {str(ans[7]):<16} {date[1]:<22} {date[2]:<10} {str(ans[10]):^16}',width=183, anchor=W).grid(column=0,row=i,sticky=W)
+        if(ans[1] is None):
+            Label(fr,bg=color,font=('Lucida Console','10'),text=f"{'-':<11} {'-':<50} {'-':<14} {'-':<11} {date[0]:<12} {'-':<12} {'-':<16} {date[1]:<22} {date[2]:<10} {'-':^16}",width=183, anchor=W).grid(column=0,row=i,sticky=W)
+        else:
+            Label(fr,bg=color,font=('Lucida Console','10'),text=f'{str(ans[1]):<11} {str(ans[2]):<50} {str(ans[3]):<14} {str(ans[4]):<11} {date[0]:<12} {str(ans[6]):<12} {str(ans[7]):<16} {date[1]:<22} {date[2]:<10} {str(ans[10]):^16}',width=183, anchor=W).grid(column=0,row=i,sticky=W)
         ans=cur.fetchone()
     i=i+1
 

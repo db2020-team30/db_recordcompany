@@ -137,13 +137,19 @@ def album_per_genre(conn): #"Άλμπουμ ανά μουσικό είδος"
     root.config(bg='white')
     cur=conn.cursor()
     #Εκτέλεση sql
-    cur.execute('''SELECT A.genre,B.album_id, B.titlos, vinyl_stock, CD_stock, release_date, graf_afm,royalties_prof,total
-                    FROM (SELECT * FROM ypagetai) AS A,
-                        (SELECT album.album_id, album.titlos, vinyl_stock, CD_stock, release_date, graf_afm,royalties_prof,COUNT(anhkei.song_id) AS total
-                        FROM (album join anhkei on album.album_id=anhkei.album_id)
-                        GROUP BY anhkei.album_id) AS B
-                    WHERE A.album_id=B.album_id
-                    ORDER BY genre, album_id''')
+    cur.execute('''SELECT * FROM((SELECT A.genre,B.album_id, B.titlos, vinyl_stock, CD_stock, release_date, graf_afm,royalties_prof,total
+                                  FROM (SELECT * FROM ypagetai) AS A,
+                                      (SELECT album.album_id, album.titlos, vinyl_stock, CD_stock, release_date, graf_afm,royalties_prof,COUNT(anhkei.song_id) AS total
+                                      FROM (album join anhkei on album.album_id=anhkei.album_id)
+                                      GROUP BY anhkei.album_id) AS B
+                                  WHERE A.album_id=B.album_id
+                                  ORDER BY genre, album_id)
+                                UNION
+                                (SELECT genre,'-','-','-','-','-','-','-','-' 
+                                FROM eidos 
+                                WHERE genre NOT IN (SELECT genre FROM ypagetai))
+                                ) as C
+                ORDER BY genre, album_id DESC''')
     ans=cur.fetchone()
     i=0
     eidos=''
@@ -175,10 +181,10 @@ def album_per_genre(conn): #"Άλμπουμ ανά μουσικό είδος"
             color='grey97'
 
         #Διαχείριση δεδομένων date
-        if(ans[5]is None or ans[5]=='0000-00-00'):
+        if(ans[5]is None or ans[5]=='0000-00-00' or ans[5]=='-'):
             date='-'
         else:
-            date=ans[5].strftime("%Y-%m-%d")
+            date=str(ans[5])
 
         #εκτύπωση δεδομένων
         Label(fr,bg=color,font=('Lucida Console','11'),text=f'{str(ans[1]):<11} {str(ans[2]):<50} {str(ans[3]):<14} {str(ans[4]):<11} {date:<12} {str(ans[6]):<12} {str(ans[7]):<16} {str(ans[8]):<13}',width=146, anchor=W).grid(column=0,row=i,sticky=W)
