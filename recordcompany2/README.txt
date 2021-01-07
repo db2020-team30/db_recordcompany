@@ -1,3 +1,6 @@
+-Πατήστε Code->Download ZIP
+-Αποσυμπιέστε το περιεχόμενο
+
 1) Εγκαταστήστε την python:
 
 link:https://www.python.org/downloads 
