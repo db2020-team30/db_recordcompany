@@ -277,7 +277,7 @@ def new_data(option,conn,table,entry,columns,check='',ch_arr=''): #επιλογ�
         elif(columns[i]=='order_date'): #για δεδομένα datetime
             entries.append(helping_func.datetime_data(i,new_val))
 
-        elif('date' in columns[i]):#για δεδομένα date
+        elif('date' in columns[i] or 'rec' in columns[i]):#για δεδομένα date
             entries.append(helping_func.date_data(i,new_val))
 
         elif(columns[i]=='diarkeia'):#για δεδομένα time
