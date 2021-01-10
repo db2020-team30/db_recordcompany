@@ -207,7 +207,7 @@ def printing(table,sql,conn,window):#εκτύπωση δεδομένων
     for i in range(N):
         temp=0
         if(info[i][1] is None):
-            if(('date' not in info[i][0]) or ('order_date' not in info[i][0])):
+            if(('order_date' not in info[i][0])):
                 temp=13
             else:
                 temp=19
@@ -243,7 +243,7 @@ def printing(table,sql,conn,window):#εκτύπωση δεδομένων
             for i in range(N):
                 if row[i] is None or row[i]=='0000-00-00' or row[i]=='0000-00-00 00:00:00':
                     data='-'
-                elif('date' not in info[i][0]):
+                elif('date' not in info[i][0] and 'rec' not in info[i][0]):
                     data=str(row[i])
                 else:
                     if('order_date' in info[i][0]):

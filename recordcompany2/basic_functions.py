@@ -151,14 +151,14 @@ def update_exe(conn,table,entry,entries,columns,new_val): #αποθήκευση 
             temp=[]
             for c in range(3):
                 temp.append(entries[i][c].get())
-            if('date' not in columns[i]):
-                a=updating(table,helping_func.get_primary(table,conn),entry,columns[i],temp[0]+':'+temp[1]+':'+temp[2],conn) #εκτέλεση ενημέρωσης
+            if('date' not in columns[i] and 'rec' not in columns[i] ):
+                a=updating(table,helping_func.get_primary(table,conn),entry,columns[i],temp[0]+':'+temp[1]+':'+temp[2],conn) #εκτέλεση ενημέρωσης για γνωρισματα τυπου time
             else:
 
                 #έλεγχος για το αν η ημερομηνία είναι σωστή
                 try :
                     datetime(int(temp[0]),int(temp[1]),int(temp[2]))
-                    a=updating(table,helping_func.get_primary(table,conn),entry,columns[i],temp[0]+'-'+temp[1]+'-'+temp[2],conn) #εκτέλεση ενημέρωσης
+                    a=updating(table,helping_func.get_primary(table,conn),entry,columns[i],temp[0]+'-'+temp[1]+'-'+temp[2],conn) #εκτέλεση ενημέρωσης για γνωρισματα τυπου date
                 except ValueError :
                     helping_func.error("Λανθασμένη\nημερομηνία!")
                     return
@@ -357,7 +357,7 @@ def insert_row(table,conn,entries,new_val,columns):
             temp=[]
             for c in range(len(entries[i])):
                 temp.append(entries[i][c].get())
-            if ('date' not in columns_original[i]):   #αν είναι τύπου time
+            if ('date' not in columns_original[i] and 'rec' not in columns_original[i]):   #αν είναι τύπου time
                 sql_input.append(f"'{str(temp[0])}:{str(temp[1])}:{str(temp[2])}'")
             else:
 
